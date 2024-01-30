@@ -240,14 +240,9 @@ app.get("/datasas", function (req, res) {
     }
 
 
-    // Decrypt the password field for each result
-    results.forEach((data) => {
-      if (data.password) {
-        data.password = decryptData(data.password);
-      }
-    });
-
-    return res.status(200).send({ data: results });
+    // Decrypt the password field for each resul
+console.log("244",results.rows)
+    return res.status(200).send({ data: results.rows });
   });
 });
 
