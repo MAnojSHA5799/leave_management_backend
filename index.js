@@ -7,7 +7,7 @@ const { Client } = require("pg");
 const bodyParser = require("body-parser");
 const { body, validationResult } = require("express-validator");
 const jwt = require("jsonwebtoken");
-
+const nodemailer = require('nodemailer');
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
@@ -54,18 +54,66 @@ con.connect()
   });
 
 //Admin Page API
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'manojshakya78605@gmail.com',
+    pass: 'tzdc dhsi rsfu hgdr'
+  },
+});
+
 app.post("/approved", function (req, res) {
-  const { Status, id } = req.body;
-  const query = `update holiday SET Status=$1 WHERE id=$2`;
+  // console.log(req.body);
+  const { Status, id, item,userdata } = req.body;
+  const query = `UPDATE holiday SET Status=$1 WHERE id=$2`;
+
   con.query(query, [Status, id], function (error, results) {
     if (error) {
       console.error("Error executing query:", error);
       return res.status(500).send({ status: 500, error: true, message: "Internal Server Error" });
     }
 
+    // Check if the status is "Approved" or "Deny"
+    if (Status === "Approved" || Status === "Deny") {
+      // Send email
+      const mailOptions = {
+        from: 'manojshakya78605@gmail.com',
+        to: item,
+        subject: 'Approval Status Update',
+        text: `The status for holiday with ID ${id} has been updated to ${Status}. \n\nLeave Details:\nType: ${userdata.leavetype}\nName: ${userdata.name}\nEmployee Code: ${userdata.empcode}\nStart Date: ${userdata.startdate}\nEnd Date: ${userdata.enddate}\nNotes: ${userdata.notes}`,
+  
+      };
+
+      transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+          console.error("Error sending email:", error);
+        } else {
+          console.log("Email sent: " + info.response);
+        }
+      });
+    }
+
     return res.send({ status: 200, data: results, message: true });
   });
 });
+
+// app.post("/approved", function (req, res) {
+//   console.log(req.body)
+//   const { Status, id,item } = req.body;
+//   const query = `update holiday SET Status=$1 WHERE id=$2`;
+//   con.query(query, [Status, id], function (error, results) {
+//     if (error) {
+//       console.error("Error executing query:", error);
+//       return res.status(500).send({ status: 500, error: true, message: "Internal Server Error" });
+//     }
+
+//     return res.send({ status: 200, data: results, message: true });
+//   });
+// });
+
+
+
 
 
     app.post("/admin", function (req, res) {
@@ -163,20 +211,53 @@ app.post("/done", function (req, res) {
 //Post API for holiday
 
 
+// app.post('/mark', [
+//   body("leavetype", "Enter a valid name").isLength({ min: 2 }),
+//   body("name", "Enter a valid name").isLength({ min: 4 }),
+//   body("empcode", "Enter a valid empcode").isLength({ min: 5 }),
+//   body("startdate", "Enter a valid date").isDate(),
+//   body("enddate", "Enter a valid date").isDate(),
+//   body("email", "Enter a valid email").isEmail(),
+//   body("notes", "Enter a valid note").isLength({ min: 10 })
+// ], function (req, res) {
+//   // const errors = validationResult(req);
+//   // if (!errors.isEmpty()) {
+//   //   return res.status(400).json({ errors: errors.array() });
+//   // }
+
+//   const leavetype = req.body.leavetype;
+//   const name = req.body.name;
+//   const empcode = req.body.empcode;
+//   const startdate = req.body.startdate;
+//   const enddate = req.body.enddate;
+//   const email = req.body.email.toLowerCase();
+//   const notes = req.body.notes;
+
+//   const query = 'INSERT INTO holiday (leavetype, name, empcode, startdate, enddate, email, notes) VALUES ($1, $2, $3, $4, $5, $6, $7)';
+//   con.query(query, [leavetype, name, empcode, startdate, enddate, email, notes], function (err, results) {
+//     if (err) {
+//       console.error("Error executing query:", err);
+//       return res.status(500).send({ error: true, message: "Internal Server Error" });
+//     }
+//     return res.send({ error: false, data: results, message: false });
+//   });
+// });
+
+
 app.post('/mark', [
-  body("leavetype", "Enter a valid name").isLength({ min: 2 }),
+   body("leavetype", "Enter a valid name").isLength({ min: 2 }),
   body("name", "Enter a valid name").isLength({ min: 4 }),
   body("empcode", "Enter a valid empcode").isLength({ min: 5 }),
   body("startdate", "Enter a valid date").isDate(),
   body("enddate", "Enter a valid date").isDate(),
   body("email", "Enter a valid email").isEmail(),
   body("notes", "Enter a valid note").isLength({ min: 10 })
-], function (req, res) {
+], async function (req, res) {
   // const errors = validationResult(req);
   // if (!errors.isEmpty()) {
   //   return res.status(400).json({ errors: errors.array() });
   // }
-
+console.log(req.body)
   const leavetype = req.body.leavetype;
   const name = req.body.name;
   const empcode = req.body.empcode;
@@ -186,12 +267,36 @@ app.post('/mark', [
   const notes = req.body.notes;
 
   const query = 'INSERT INTO holiday (leavetype, name, empcode, startdate, enddate, email, notes) VALUES ($1, $2, $3, $4, $5, $6, $7)';
-  con.query(query, [leavetype, name, empcode, startdate, enddate, email, notes], function (err, results) {
+  con.query(query, [leavetype, name, empcode, startdate, enddate, email, notes], async function (err, results) {
     if (err) {
       console.error("Error executing query:", err);
       return res.status(500).send({ error: true, message: "Internal Server Error" });
     }
-    return res.send({ error: false, data: results, message: false });
+
+    // Send email using Nodemailer
+    try {
+      const transporter = nodemailer.createTransport({
+        service: 'Gmail', // e.g., 'gmail'
+        auth: {
+          user: 'manojshakya78605@gmail.com',
+          pass: 'tzdc dhsi rsfu hgdr'
+        }
+      });
+
+      const mailOptions = {
+        from: 'manojshakya78605@gmail.com',
+        to: email,
+        subject: 'Leave Request Confirmation',
+        text: `Your leave request has been successfully submitted.\n\nLeave Details:\nType: ${leavetype}\nName: ${name}\nEmployee Code: ${empcode}\nStart Date: ${startdate}\nEnd Date: ${enddate}\nNotes: ${notes}`
+      };
+
+      const info = await transporter.sendMail(mailOptions);
+      console.log('Email sent: ', info.response);
+    } catch (emailError) {
+      console.error('Error sending email:', emailError);
+    }
+
+    return res.send({ error: false, data: results, message: 'Leave request submitted successfully.' });
   });
 });
 
