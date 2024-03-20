@@ -37,11 +37,11 @@ const { sendEMail } = require("./demo");
 // });
 
 const con = new Client({
-  user: "postgres",
+  user: "postgres.adbusyzbvzlgetciiwso",
   password: "Biltz123@990",
   database: "postgres",
   port: 5432,
-  host: "db.adbusyzbvzlgetciiwso.supabase.co",
+  host: "aws-0-ap-southeast-1.pooler.supabase.com",
   ssl: { rejectUnauthorized: false },
 });
 
